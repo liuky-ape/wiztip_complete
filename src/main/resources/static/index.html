@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiztip 语音助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .status-box {
+            background: #f5f7fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .status-text {
+            color: #555;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .wake-word {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 24px;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-start {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-stop {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-manual {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-save {
+            background: #f6ad55;
+            color: white;
+        }
+
+        .btn-save:disabled {
+            background: #cbd5e0;
+        }
+
+        .recording-indicator {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .recording-indicator.active {
+            display: block;
+        }
+
+        .pulse {
+            width: 60px;
+            height: 60px;
+            background: #f56565;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+        }
+
+        .user-info {
+            margin-bottom: 20px;
+        }
+
+        .user-info label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .user-info input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .user-info input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .log {
+            background: #f5f7fa;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .log-item {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .log-time {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .listening {
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(102, 126, 234, 1); }
+        }
+
+        .transcript-box {
+            background: #f0f9ff;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .transcript-box.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-confirm {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-upload {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #e2e8f0;
+            color: #555;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .transcript-title {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .transcript-text {
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .volume-indicator {
+            display: none;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .volume-indicator.show {
+            display: block;
+        }
+
+        .volume-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            border-radius: 4px;
+            transition: width 0.1s;
+        }
+
+        .silence-timer {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Wiztip 语音助手</h1>
+        <p class="subtitle">说出"你好小笔"开始录音</p>
+
+        <div class="status-box" id="statusBox">
+            <div class="status-icon">👂</div>
+            <div class="status-text" id="statusText">准备就绪，等待唤醒</div>
+            <span class="wake-word" id="wakeWord" style="display:none;">你好小笔</span>
+        </div>
+
+        <div class="recording-indicator" id="recordingIndicator">
+            <div class="pulse"></div>
+            <div>正在录音...</div>
+            <div class="volume-indicator" id="volumeIndicator">
+                <div class="volume-bar" id="volumeBar"></div>
+            </div>
+            <div class="silence-timer" id="silenceTimer"></div>
+        </div>
+
+        <div class="transcript-box" id="transcriptBox">
+            <div class="transcript-title">📝 识别结果：</div>
+            <div class="transcript-text" id="transcriptText">等待识别...</div>
+            <div class="confirm-buttons" id="confirmButtons" style="display:none;">
+                <button class="btn-confirm btn-upload" onclick="confirmUpload()">☁️ 上传保存到云端</button>
+                <button class="btn-confirm btn-cancel" onclick="cancelUpload()">✕ 放弃</button>
+            </div>
+        </div>
+
+        <div class="user-info">
+            <label for="userId">用户ID:</label>
+            <input type="text" id="userId" value="user_001" placeholder="请输入用户ID">
+        </div>
+
+        <div class="controls">
+            <button class="btn-start" id="btnStart" onclick="startWakeWordDetection()">启动唤醒词检测</button>
+            <button class="btn-stop" id="btnStop" onclick="stopWakeWordDetection()" disabled>停止检测</button>
+        </div>
+
+        <div class="controls">
+            <button class="btn-manual" id="btnManual" onclick="manualRecord()">手动录音</button>
+            <button class="btn-save" id="btnSave" onclick="saveRecording()" disabled>💾 保存录音</button>
+        </div>
+
+        <div class="log" id="logContainer">
+            <div class="log-item">
+                <span class="log-time">系统就绪</span><br>
+                点击"启动唤醒词检测"开始使用
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let recognition = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isListening = false;
+        let isRecording = false;
+        let recordingStream = null;
+        let audioContext = null;
+        let analyser = null;
+        let silenceTimer = null;
+        let silenceStartTime = null;
+        let lastSoundTime = null;
+        const SILENCE_THRESHOLD = 5000; // 5秒静音
+        const VOLUME_THRESHOLD = 0.01; // 音量阈值
+        let currentAudioBlob = null; // 当前录音的音频数据
+        let currentTranscript = null; // 当前识别结果
+        let currentFileName = null; // 当前文件名
+
+        // 添加日志
+        function addLog(message) {
+            const logContainer = document.getElementById('logContainer');
+            const logItem = document.createElement('div');
+            logItem.className = 'log-item';
+            const time = new Date().toLocaleTimeString();
+            logItem.innerHTML = `<span class="log-time">${time}</span><br>${message}`;
+            logContainer.insertBefore(logItem, logContainer.firstChild);
+            
+            // 限制日志数量
+            while (logContainer.children.length > 10) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        // 更新状态
+        function updateStatus(icon, text, showWakeWord = false) {
+            document.getElementById('statusBox').innerHTML = `
+                <div class="status-icon">${icon}</div>
+                <div class="status-text">${text}</div>
+                ${showWakeWord ? '<span class="wake-word">你好小笔</span>' : ''}
+            `;
+        }
+
+        // 启动唤醒词检测
+        function startWakeWordDetection() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('您的浏览器不支持语音识别，请使用Chrome浏览器');
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+
+            recognition.onstart = function() {
+                isListening = true;
+                document.getElementById('btnStart').disabled = true;
+                document.getElementById('btnStop').disabled = false;
+                document.getElementById('statusBox').classList.add('listening');
+                updateStatus('👂', '正在监听唤醒词...', true);
+                addLog('✅ 唤醒词检测已启动');
+            };
+
+            recognition.onresult = function(event) {
+                const last = event.results.length - 1;
+                const transcript = event.results[last][0].transcript.trim();
+                
+                console.log('识别到:', transcript);
+                
+                // 检测唤醒词
+                if (transcript.includes('你好小笔') || 
+                    transcript.includes('你好 小笔') ||
+                    transcript.includes('你好小比') ||
+                    transcript.includes('小笔')) {
+                    addLog(`🎯 检测到唤醒词: "${transcript}"`);
+                    startRecording();
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('识别错误:', event.error);
+                addLog(`❌ 识别错误: ${event.error}`);
+            };
+
+            recognition.onend = function() {
+                if (isListening && !isRecording) {
+                    recognition.start(); // 自动重启
+                }
+            };
+
+            recognition.start();
+        }
+
+        // 停止唤醒词检测
+        function stopWakeWordDetection() {
+            if (recognition) {
+                isListening = false;
+                recognition.stop();
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnStop').disabled = true;
+                document.getElementById('statusBox').classList.remove('listening');
+                updateStatus('🛑', '检测已停止');
+                addLog('⏹️ 唤醒词检测已停止');
+            }
+        }
+
+        // 检测音量和静音
+        function detectSilence() {
+            if (!analyser || !isRecording) return;
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+            
+            // 计算平均音量
+            const average = dataArray.reduce((a, b) => a + b) / dataArray.length / 255;
+            
+            // 更新音量指示器
+            const volumeBar = document.getElementById('volumeBar');
+            if (volumeBar) {
+                volumeBar.style.width = (average * 100) + '%';
+            }
+
+            const now = Date.now();
+
+            // 检测是否有声音
+            if (average > VOLUME_THRESHOLD) {
+                lastSoundTime = now;
+                silenceStartTime = null;
+                document.getElementById('silenceTimer').textContent = '';
+            } else {
+                // 开始计算静音时长
+                if (!silenceStartTime) {
+                    silenceStartTime = now;
+                }
+                
+                const silenceDuration = now - silenceStartTime;
+                const remainingTime = Math.ceil((SILENCE_THRESHOLD - silenceDuration) / 1000);
+                
+                if (remainingTime > 0) {
+                    document.getElementById('silenceTimer').textContent = 
+                        `静音 ${remainingTime} 秒后自动停止`;
+                }
+
+                // 超过5秒静音则停止录音
+                if (silenceDuration >= SILENCE_THRESHOLD) {
+                    addLog('🔇 检测到5秒静音，自动停止录音');
+                    stopRecording('silence');
+                    return;
+                }
+            }
+
+            // 继续检测
+            if (isRecording) {
+                requestAnimationFrame(detectSilence);
+            }
+        }
+
+        // 开始录音
+        async function startRecording() {
+            if (isRecording) return;
+
+            try {
+                updateStatus('🎙️', '正在录音，请说话...（5秒无声音自动停止）');
+                document.getElementById('recordingIndicator').classList.add('active');
+                document.getElementById('volumeIndicator').classList.add('show');
+                document.getElementById('transcriptBox').classList.remove('show');
+                document.getElementById('btnSave').disabled = false;
+                document.getElementById('btnManual').textContent = '⏹️ 停止录音';
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recordingStream = stream;
+                
+                // 创建音频分析器
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 256;
+
+                // 初始化录音
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                isRecording = true;
+                lastSoundTime = Date.now();
+                silenceStartTime = null;
+
+                mediaRecorder.ondataavailable = function(event) {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = function() {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    
+                    // 保存录音数据
+                    currentAudioBlob = audioBlob;
+                    currentFileName = `recording_${Date.now()}.wav`;
+                    
+                    // 调用后端阿里云NLS进行识别
+                    recognizeWithCloud(audioBlob);
+                    
+                    // 停止所有音轨
+                    if (recordingStream) {
+                        recordingStream.getTracks().forEach(track => track.stop());
+                    }
+                    
+                    // 关闭音频上下文
+                    if (audioContext) {
+                        audioContext.close();
+                        audioContext = null;
+                    }
+                    
+                    // 恢复按钮状态
+                    document.getElementById('btnSave').disabled = true;
+                    document.getElementById('btnManual').textContent = '手动录音';
+                };
+
+                mediaRecorder.start();
+                addLog('🎙️ 开始录音...（5秒无声音自动停止，或点击"保存录音"手动停止）');
+
+                // 开始检测静音
+                detectSilence();
+
+            } catch (error) {
+                console.error('录音失败:', error);
+                addLog(`❌ 录音失败: ${error.message}`);
+                isRecording = false;
+                document.getElementById('recordingIndicator').classList.remove('active');
+                document.getElementById('volumeIndicator').classList.remove('show');
+                document.getElementById('btnSave').disabled = true;
+                document.getElementById('btnManual').textContent = '手动录音';
+            }
+        }
+
+        // 停止录音
+        function stopRecording(reason = 'manual') {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                isRecording = false;
+                document.getElementById('recordingIndicator').classList.remove('active');
+                document.getElementById('volumeIndicator').classList.remove('show');
+                document.getElementById('silenceTimer').textContent = '';
+                updateStatus('🔍', '正在本地识别...');
+                
+                let reasonText = '';
+                if (reason === 'silence') {
+                    reasonText = '（5秒静音）';
+                } else if (reason === 'save') {
+                    reasonText = '（手动保存）';
+                }
+                addLog(`⏹️ 录音结束${reasonText}，开始识别...`);
+            }
+        }
+
+        // 手动录音/停止
+        async function manualRecord() {
+            if (isRecording) {
+                stopRecording('manual');
+            } else {
+                await startRecording();
+            }
+        }
+
+        // 保存录音
+        function saveRecording() {
+            if (!isRecording) {
+                return;
+            }
+            
+            addLog('💾 用户点击保存，停止录音');
+            stopRecording('save');
+        }
+
+        // 使用阿里云NLS识别音频
+        async function recognizeWithCloud(audioBlob) {
+            const userId = document.getElementById('userId').value || 'user_001';
+            const formData = new FormData();
+            formData.append('file', audioBlob, currentFileName);
+            formData.append('userId', userId);
+
+            try {
+                updateStatus('☁️', '正在调用阿里云NLS识别...');
+                document.getElementById('transcriptBox').classList.add('show');
+                document.getElementById('transcriptText').textContent = '正在识别，请稍候...';
+                document.getElementById('confirmButtons').style.display = 'none';
+                addLog('☁️ 正在调用阿里云NLS进行语音识别...');
+
+                const response = await fetch('/api/audio/recognize', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.transcript) {
+                        // 保存识别结果（不包含ossUrl，因为还没上传）
+                        currentTranscript = result.transcript;
+                        
+                        // 显示识别结果
+                        document.getElementById('transcriptText').textContent = result.transcript;
+                        document.getElementById('confirmButtons').style.display = 'flex';
+                        updateStatus('✅', '识别完成，请确认是否保存');
+                        addLog(`✅ NLS识别成功: ${result.transcript.substring(0, 50)}${result.transcript.length > 50 ? '...' : ''}`);
+                    } else {
+                        throw new Error('未获取到识别结果');
+                    }
+                } else {
+                    throw new Error(`识别失败: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('识别错误:', error);
+                addLog(`❌ 识别失败: ${error.message}`);
+                document.getElementById('transcriptText').textContent = 
+                    `识别失败: ${error.message}\n\n您可以点击"放弃"后重新录音，或联系管理员检查配置。`;
+                document.getElementById('confirmButtons').style.display = 'flex';
+                updateStatus('❌', '识别失败');
+            }
+        }
+
+        // 确认保存到数据库
+        async function confirmUpload() {
+            if (!currentTranscript || !currentAudioBlob) {
+                addLog('❌ 缺少识别数据或音频文件');
+                return;
+            }
+
+            document.getElementById('confirmButtons').style.display = 'none';
+            updateStatus('💾', '正在上传并保存到数据库...');
+            addLog('💾 用户确认保存，正在上传到OSS并写入数据库...');
+
+            try {
+                const userId = document.getElementById('userId').value || 'user_001';
+                const formData = new FormData();
+                
+                // 重新发送音频文件（这次会上传到OSS并保存）
+                formData.append('file', currentAudioBlob, currentFileName);
+                formData.append('transcript', currentTranscript);
+                formData.append('userId', userId);
+
+                const response = await fetch('/api/audio/save', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // 构造详细的保存结果显示
+                    const displayText = `📝 识别文本：\n${result.transcript}\n\n` +
+                        `✅ 已成功保存到云端数据库！\n\n` +
+                        `📊 保存信息：\n` +
+                        `• 记录ID: ${result.recordId}\n` +
+                        `• 文件名: ${result.fileName}\n` +
+                        `• 向量维度: ${result.vectorDimension}\n` +
+                        `• 保存时间: ${result.saveTime}\n` +
+                        `• OSS URL: ${result.ossUrl}`;
+                    
+                    document.getElementById('transcriptText').textContent = displayText;
+                    updateStatus('✅', '已成功保存！', false);
+                    
+                    // 详细日志记录
+                    console.log('========================================');
+                    console.log('保存成功详情:');
+                    console.log('识别文本:', result.transcript);
+                    console.log('记录ID:', result.recordId);
+                    console.log('文件名:', result.fileName);
+                    console.log('向量维度:', result.vectorDimension);
+                    console.log('OSS URL:', result.ossUrl);
+                    console.log('保存时间:', result.saveTime);
+                    console.log('========================================');
+                    
+                    // 添加到操作日志
+                    addLog(`✅ 保存成功 - 记录ID: ${result.recordId}`);
+                    addLog(`📝 识别文本: ${result.transcript}`);
+                    addLog(`📁 文件: ${result.fileName}`);
+                    addLog(`🔢 向量维度: ${result.vectorDimension}`);
+                    
+                    // 清空数据
+                    currentAudioBlob = null;
+                    currentTranscript = null;
+                    
+                    // 8秒后恢复监听（给用户足够时间查看结果）
+                    setTimeout(() => {
+                        if (isListening) {
+                            updateStatus('👂', '正在监听唤醒词...', true);
+                        } else {
+                            updateStatus('👂', '准备就绪，等待唤醒');
+                        }
+                        document.getElementById('transcriptBox').classList.remove('show');
+                    }, 8000);
+                    
+                } else {
+                    throw new Error(`保存失败: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('保存错误:', error);
+                addLog(`❌ 保存失败: ${error.message}`);
+                alert(`保存失败: ${error.message}\n\n请检查后端服务是否正常。`);
+                document.getElementById('confirmButtons').style.display = 'flex';
+            }
+        }
+
+        // 取消保存
+        function cancelUpload() {
+            currentAudioBlob = null;
+            currentTranscript = null;
+            document.getElementById('transcriptBox').classList.remove('show');
+            document.getElementById('confirmButtons').style.display = 'none';
+            addLog('✕ 用户取消保存，录音已丢弃');
+            
+            // 恢复监听状态
+            if (isListening) {
+                updateStatus('👂', '正在监听唤醒词...', true);
+            } else {
+                updateStatus('👂', '准备就绪，等待唤醒');
+            }
+        }
+
+        // 页面加载完成
+        window.onload = function() {
+            addLog('🚀 系统初始化完成');
+        };
+    </script>
+</body>
+</html>
+

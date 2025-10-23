@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS voice_record (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL,
+  file_name VARCHAR(255),
+  oss_url VARCHAR(500),
+  duration DOUBLE DEFAULT 0,
+  status TINYINT DEFAULT 0,
+  upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS voice_transcript (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  record_id BIGINT NOT NULL,
+  user_id VARCHAR(64) NOT NULL,
+  transcript_text TEXT,
+  confidence FLOAT DEFAULT 0,
+  embedding_json JSON,
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_record FOREIGN KEY (record_id) REFERENCES voice_record(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS daily_summary (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL,
+  summary_text TEXT,
+  keywords VARCHAR(255),
+  date DATE,
+  push_status TINYINT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
