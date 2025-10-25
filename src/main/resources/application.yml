@@ -21,14 +21,15 @@ quartz:
 wiztip:
   aliyun:
     oss:
-      endpoint: "oss-cn-shanghai.aliyuncs.com"
-      bucket: "your-bucket-name"
+      endpoint: "cn-beijing.oss.aliyuncs.com"
+      bucket: "wiztip-test"
       accessKeyId: "YOUR_ACCESS_KEY_ID"
       accessKeySecret: "YOUR_ACCESS_KEY_SECRET"
   asr:
     appKey: "YOUR_ASR_APP_KEY"
     accessKeyId: "YOUR_ACCESS_KEY_ID"
     accessKeySecret: "YOUR_ACCESS_KEY_SECRET"
+
   llm:
     apiKey: "YOUR_QWEN_API_KEY"
     endpoint: "https://dashscope.aliyuncs.com/api/v1/services/your-service-id/gen" 
