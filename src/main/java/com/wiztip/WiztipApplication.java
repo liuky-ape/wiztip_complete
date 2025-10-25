@@ -2,6 +2,8 @@ package com.wiztip;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import com.wiztip.config.WiztipProperties;
 
 /**
  * Wiztip语音助手应用主入口
@@ -16,6 +18,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 1.0.0
  */
 @SpringBootApplication
+@EnableConfigurationProperties(WiztipProperties.class)
 public class WiztipApplication {
     /**
      * 应用程序启动入口

@@ -18,6 +18,7 @@ quartz:
     org.quartz.threadPool.threadCount: 5
 
 # Aliyun / LLM placeholders - replace with real keys in production
+# 阿里云配置 - 请替换为真实的密钥
 wiztip:
   aliyun:
     oss:
@@ -29,7 +30,6 @@ wiztip:
     appKey: "YOUR_ASR_APP_KEY"
     accessKeyId: "YOUR_ACCESS_KEY_ID"
     accessKeySecret: "YOUR_ACCESS_KEY_SECRET"
-
   llm:
     apiKey: "YOUR_QWEN_API_KEY"
-    endpoint: "https://dashscope.aliyuncs.com/api/v1/services/your-service-id/gen" 
+    endpoint: "https://dashscope.aliyuncs.com/api/v1/services/your-service-id/gen"

@@ -1,10 +1,10 @@
 package com.wiztip.service;
 
+import com.wiztip.config.WiztipProperties;
 import com.wiztip.entity.VoiceRecord;
 import com.wiztip.entity.VoiceTranscript;
 import com.wiztip.repository.VoiceTranscriptRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,17 +30,8 @@ import com.alibaba.nls.client.AccessToken;
 @Service
 public class AsrService {
 
-    /** ASR应用AppKey */
-    @Value("${wiztip.asr.appKey}")
-    private String appKey;
-    
-    /** 阿里云AccessKey ID */
-    @Value("${wiztip.asr.accessKeyId}")
-    private String accessKeyId;
-    
-    /** 阿里云AccessKey Secret */
-    @Value("${wiztip.asr.accessKeySecret}")
-    private String accessKeySecret;
+    @Autowired
+    private WiztipProperties wiztipProperties;
 
     @Autowired
     private VoiceTranscriptRepository transcriptRepo;
@@ -80,7 +71,10 @@ public class AsrService {
             // 初始化AccessToken客户端（如果还没有初始化）
             if (accessTokenClient == null) {
                 System.out.println("初始化阿里云NLS Token客户端...");
-                accessTokenClient = new AccessToken(accessKeyId, accessKeySecret);
+                accessTokenClient = new AccessToken(
+                    wiztipProperties.getAliyun().getAsr().getAccessKeyId(),
+                    wiztipProperties.getAliyun().getAsr().getAccessKeySecret()
+                );
                 System.out.println("NLS Token客户端初始化成功");
             }
             
@@ -121,7 +115,7 @@ public class AsrService {
                 "3. AccessKey是否有NLS服务权限\n" +
                 "4. 网络是否能访问阿里云API\n\n" +
                 "当前配置：\n" +
-                "  AccessKeyId: " + accessKeyId.substring(0, Math.min(8, accessKeyId.length())) + "...\n" +
+                "  AccessKeyId: " + wiztipProperties.getAliyun().getAsr().getAccessKeyId().substring(0, Math.min(8, wiztipProperties.getAliyun().getAsr().getAccessKeyId().length())) + "...\n" +
                 "  Region: cn-shanghai\n" +
                 "========================================\n";
             
@@ -149,13 +143,13 @@ public class AsrService {
             String token = getToken();
             
             // 构造完整URL（带查询参数）
-            String urlWithParams = baseUrl + String.format(
-                "?appkey=%s&format=%s&sample_rate=16000&enable_intermediate_result=false&enable_punctuation_prediction=true&enable_inverse_text_normalization=true",
-                appKey, format
-            );
+                String urlWithParams = baseUrl + String.format(
+                    "?appkey=%s&format=%s&sample_rate=16000&enable_intermediate_result=false&enable_punctuation_prediction=true&enable_inverse_text_normalization=true",
+                    wiztipProperties.getAliyun().getAsr().getAppKey(), format
+                );
             
             System.out.println("调用NLS一句话识别API: " + baseUrl);
-            System.out.println("AppKey: " + appKey);
+            System.out.println("AppKey: " + wiztipProperties.getAliyun().getAsr().getAppKey());
             System.out.println("文件大小: " + fileData.length + " bytes");
             System.out.println("音频格式: " + format);
             
@@ -241,7 +235,7 @@ public class AsrService {
             
             // 构造请求参数：appkey、音频URL、音频格式
             String payload = String.format("{\"appkey\":\"%s\",\"url\":\"%s\",\"format\":\"wav\"}", 
-                appKey, ossUrl);
+                wiztipProperties.getAliyun().getAsr().getAppKey(), ossUrl);
             post.setEntity(new StringEntity(payload));
             
             // 发送请求并解析响应
